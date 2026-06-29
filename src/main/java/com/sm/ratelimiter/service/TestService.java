@@ -5,6 +5,8 @@ import com.sm.ratelimiter.dto.Results;
 import com.sm.ratelimiter.dto.TestResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,35 +28,29 @@ public class TestService {
     @Autowired
     private RateLimiterProperties config;
     public Mono<ResponseEntity<?>> testApi(int numberOfRequest,int refillToken,String clientId) {
+        if(numberOfRequest>100){
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("numberOfRequest<=100"));
+        }
         Map<String, String> requestsResult=new LinkedHashMap<>();
-        RestTemplate restTemplate=new RestTemplate();
-        String url= config.getApiServerUrl()+"/api/health";
+//        RestTemplate restTemplate=new RestTemplate();
+//        String url= "http://127.0.0.1:" +
+//                System.getenv().getOrDefault("PORT", "8080")
+//                + "/api/health";
 
         bucketService.setRefillToken(refillToken);
 
         int successCount=0,failureCount=0;
 
         for(int i=1;i<=numberOfRequest;i++){
-                try {
-                    ResponseEntity<?> response = restTemplate.exchange(
-                            url,
-                            HttpMethod.GET,
-                            null,
-                            Object.class);
+            boolean allowed = rateLimiterService.isAllowed(clientId);
 
-                    requestsResult.put("✅ Request " + i,
-                            response.getStatusCode().toString());
-                    successCount++;
-
-                } catch (HttpClientErrorException.TooManyRequests ex) {
-
-                    requestsResult.put("❌ Request " + i, "429 Too Many Requests");
-                    failureCount++;
-
-                } catch (Exception ex) {
-
-                    requestsResult.put("❗ Request " + i, ex.getMessage());
-                }
+            if(allowed) {
+                successCount++;
+                requestsResult.put("✅ Request " + i, "200 OK");
+            } else {
+                failureCount++;
+                requestsResult.put("❌ Request " + i, "429 Too Many Requests");
+            }
 
         }
 
