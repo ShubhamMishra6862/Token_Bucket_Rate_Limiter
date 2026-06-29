@@ -23,6 +23,11 @@ StatusController {
         this.rateLimiterService = rateLimiterService;
     }
 
+    @GetMapping("/")
+    public ResponseEntity<?> ping(){
+        return ResponseEntity.ok("Rate Limiter app is reachable");
+    }
+
     /**
      * Health check endpoint.
      */
