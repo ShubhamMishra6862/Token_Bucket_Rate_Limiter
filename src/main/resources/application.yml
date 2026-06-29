@@ -7,7 +7,7 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-      timeout: 2000ms
+      timeout: 2000
       ssl:
         enabled: ${REDIS_SSL:true}
 
@@ -36,4 +36,4 @@ rate-limiter:
   capacity: 10
   refill-rate: 5
   timeout: 2000
-  api-server-url: ${APP_URL:http://localhost:8081}
+  api-server-url: ${APP_URL:http://localhost:8080}

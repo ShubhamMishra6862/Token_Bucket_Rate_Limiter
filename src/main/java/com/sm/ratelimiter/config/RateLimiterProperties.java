@@ -14,7 +14,7 @@ public class RateLimiterProperties {
     
     private long refillRate = 5;
 
-    private String apiServerUrl = "http://rate-limiter-api:8080";
+    private String apiServerUrl = "http://localhost:8080";
 
     private int timeout = 5000;
 }

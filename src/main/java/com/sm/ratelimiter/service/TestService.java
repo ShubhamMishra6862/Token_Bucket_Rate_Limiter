@@ -1,5 +1,6 @@
 package com.sm.ratelimiter.service;
 
+import com.sm.ratelimiter.config.RateLimiterProperties;
 import com.sm.ratelimiter.dto.Results;
 import com.sm.ratelimiter.dto.TestResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +23,12 @@ public class TestService {
     private RateLimiterService rateLimiterService;
     @Autowired
     private RedisTokenBucketService bucketService;
-
+    @Autowired
+    private RateLimiterProperties config;
     public Mono<ResponseEntity<?>> testApi(int numberOfRequest,int refillToken,String clientId) {
         Map<String, String> requestsResult=new LinkedHashMap<>();
         RestTemplate restTemplate=new RestTemplate();
-        String url="http://localhost:8081/api/health";
+        String url= config.getApiServerUrl()+"/api/health";
 
         bucketService.setRefillToken(refillToken);
 
