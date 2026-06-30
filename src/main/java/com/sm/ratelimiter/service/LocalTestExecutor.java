@@ -4,22 +4,20 @@ import com.sm.ratelimiter.config.RateLimiterProperties;
 import com.sm.ratelimiter.dto.Results;
 import com.sm.ratelimiter.dto.TestResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Profile("!prod")
 @Service
-public class TestService {
+public class LocalTestExecutor implements TestApi {
 
     @Autowired
     private RateLimiterService rateLimiterService;
@@ -27,29 +25,37 @@ public class TestService {
     private RedisTokenBucketService bucketService;
     @Autowired
     private RateLimiterProperties config;
-    public Mono<ResponseEntity<?>> testApi(int numberOfRequest,int refillToken,String clientId) {
-        if(numberOfRequest>100){
-            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("numberOfRequest<=100"));
-        }
+
+    @Override
+    public Mono<ResponseEntity<?>> execute(int numberOfRequest,int refillToken,String clientId){
         Map<String, String> requestsResult=new LinkedHashMap<>();
-//        RestTemplate restTemplate=new RestTemplate();
-//        String url= "http://127.0.0.1:" +
-//                System.getenv().getOrDefault("PORT", "8080")
-//                + "/api/health";
+        RestTemplate restTemplate=new RestTemplate();
+        String url= config.getApiServerUrl()+"/api/health";
 
         bucketService.setRefillToken(refillToken);
 
         int successCount=0,failureCount=0;
 
         for(int i=1;i<=numberOfRequest;i++){
-            boolean allowed = rateLimiterService.isAllowed(clientId);
+            try {
+                ResponseEntity<?> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        null,
+                        Object.class);
 
-            if(allowed) {
+                requestsResult.put("✅ Request " + i,
+                        response.getStatusCode().toString());
                 successCount++;
-                requestsResult.put("✅ Request " + i, "200 OK");
-            } else {
-                failureCount++;
+
+            } catch (HttpClientErrorException.TooManyRequests ex) {
+
                 requestsResult.put("❌ Request " + i, "429 Too Many Requests");
+                failureCount++;
+
+            } catch (Exception ex) {
+
+                requestsResult.put("❗ Request " + i, ex.getMessage());
             }
 
         }

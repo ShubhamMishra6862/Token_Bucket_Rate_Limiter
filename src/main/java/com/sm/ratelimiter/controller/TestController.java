@@ -1,14 +1,12 @@
 package com.sm.ratelimiter.controller;
 
-import com.sm.ratelimiter.dto.TestResponse;
-import com.sm.ratelimiter.service.TestService;
+import com.sm.ratelimiter.service.ProdTestExecutor;
+import com.sm.ratelimiter.service.TestApi;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -21,9 +19,8 @@ public class TestController {
 
     @Autowired
     private StatusController statusController;
-
     @Autowired
-    private TestService testService;
+    private TestApi testApi;
 
     @GetMapping
     public Mono<ResponseEntity<?>> test(
@@ -33,7 +30,7 @@ public class TestController {
 
         try {
             String clientId = statusController.getClientId(exchange);
-            return testService.testApi(numberOfRequest, refillToken, clientId);
+            return testApi.execute(numberOfRequest, refillToken, clientId);
         } catch (Exception e) {
             log.error("Error occurred: {}", e.getMessage(), e);
             return Mono.just(

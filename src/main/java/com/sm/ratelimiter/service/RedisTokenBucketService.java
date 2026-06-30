@@ -70,7 +70,6 @@ public class RedisTokenBucketService {
 
         String tokensKey = TOKENS_KEY_PREFIX + clientId;
         String lastRefillKey = LAST_REFILL_KEY_PREFIX + clientId;
-        log.info("The refill rate is: {}",properties.getRefillRate());
         long now = System.currentTimeMillis();
         String lastRefillStr = jedis.get(lastRefillKey);
         if(lastRefillStr == null){
